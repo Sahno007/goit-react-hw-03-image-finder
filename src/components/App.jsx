@@ -1,6 +1,6 @@
 import { Component } from 'react';
 import SearchBar from './SearchBar/SearchBar';
-import ImageGalery from './ImageGalery/ImageGalery';
+import ImageGalery from './ImageGallery/ImageGallery';
 import Modal from './Modal/Modal';
 import fetchPixabay from 'Services/pixabay';
 import Button from './Button/Button';
