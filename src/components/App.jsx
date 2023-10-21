@@ -1,6 +1,6 @@
-import { Component } from 'react';
+import React, { Component } from 'react';
 import SearchBar from './SearchBar/SearchBar';
-import ImageGalery from './ImageGallery/ImageGallery';
+import ImageGallery from './ImageGallery/ImageGallery';
 import Modal from './Modal/Modal';
 import fetchPixabay from 'Services/pixabay';
 import Button from './Button/Button';
@@ -18,43 +18,40 @@ export class App extends Component {
     selectedIMG: '',
   };
 
-  componentDidUpdate = (prevProps, prevState) => {
+  componentDidUpdate = async (prevProps, prevState) => {
     if (
       prevState.searchText !== this.state.searchText ||
       prevState.currentPage !== this.state.currentPage
     ) {
-      this.setState({ isLoading: true });
-      fetchPixabay(this.state.searchText, this.state.currentPage)
-        .then(resp => {
-          if (!resp.ok) {
-            this.setState({
-              error: 'Sorry, something not good',
-            });
-            throw new Error();
-          }
+      this.setState({ isLoading: true, error: '' });
 
-          return resp.json();
-        })
-        .then(data => {
-          if (data.totalHits === 0) {
-            this.setState({ error: 'Sorry, nothing' });
-            throw new Error();
-          } else {
-            this.setState({
-              error: '',
-              items:
-                prevState.currentPage === this.state.currentPage
-                  ? data.hits
-                  : [...prevState.items, ...data.hits],
-              totalHits: data.totalHits,
-              isLoading: false,
-            });
-          }
-        })
-        .catch(err => console.log(err))
-        .finally(() => {
-          this.setState({ isLoading: false });
+      try {
+        const response = await fetchPixabay(this.state.searchText, this.state.currentPage);
+
+        if (!response.ok) {
+          throw new Error('Sorry, something went wrong');
+        }
+
+        const data = await response.json();
+
+        if (data.totalHits === 0) {
+          throw new Error('Sorry, nothing found');
+        }
+
+        const newItems =
+          prevState.searchText !== this.state.searchText ? [] : this.state.items;
+
+        this.setState({
+          items: [...newItems, ...data.hits],
+          totalHits: data.totalHits,
+          isLoading: false,
         });
+      } catch (error) {
+        this.setState({
+          error: error.message,
+          isLoading: false,
+        });
+      }
     }
   };
 
@@ -71,11 +68,16 @@ export class App extends Component {
   };
 
   handlerLoadMore = () => {
-    this.setState({ currentPage: this.state.currentPage + 1 });
+    this.setState({ currentPage: this.state.currentPage + 1, error: '' });
   };
 
-  handlerSubmit = value => {
-    this.setState({ searchText: value, currentPage: 1, items: [], error: '' });
+  handlerSubmit = (value) => {
+    this.setState({
+      searchText: value,
+      currentPage: 1,
+      items: [],
+      error: '',
+    });
   };
 
   render() {
@@ -89,7 +91,7 @@ export class App extends Component {
           />
         )}
         {this.state.items.length > 0 && (
-          <ImageGalery
+          <ImageGallery
             items={this.state.items}
             handlerImageClick={this.handlerImageClick}
           />
